@@ -126,7 +126,7 @@ export function DataTable<TData, TValue>({
                 className="h-24 text-center"
               >
                 <div className="flex justify-center gap-3 items-center">
-                  You don't have any Files, Start Uploading files Here{" "}
+                  You don&apos;t have any Files, Start Uploading files Here{" "}
                   <ArrowUpCircleIcon />
                 </div>
               </TableCell>
