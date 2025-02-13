@@ -9,14 +9,14 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable, UploadTask } from "firebase/storage";
 import { useState } from "react";
 import ReactDropzone from "react-dropzone";
 import toast from "react-hot-toast";
 
 const Dropzone = () => {
   const maxSize = 20 * 1024 * 1024;
-  const [uploads, setUploads] = useState<{ id: string; name: string; progress: number; loading: boolean; uploadTask?: any }[]>([]);
+  const [uploads, setUploads] = useState<{ id: string; name: string; progress: number; loading: boolean; uploadTask?: UploadTask }[]>([]);
   const { user } = useUser();
 
   const uploadFile = async (selectedFile: File) => {
@@ -43,7 +43,7 @@ const Dropzone = () => {
         const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setUploads((prev) => prev.map((upload) => upload.id === uploadId ? { ...upload, progress } : upload));
       },
-      (error) => {
+      () => {
         toast.error("Upload failed!");
         setUploads((prev) => prev.filter((upload) => upload.id !== uploadId));
       },

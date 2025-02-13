@@ -3,10 +3,8 @@ import { useAppStore } from "@/store/store";
 import { useShallow } from "zustand/react/shallow";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
@@ -22,11 +20,10 @@ import toast from "react-hot-toast";
 function DeleteModal() {
   const { user } = useUser();
   const [isPending, setIsPending] = useState(false);
-  const [fileId, setFileId, isDeleteModelOpen, setIsDeleteModelOpen] =
+  const [fileId,  isDeleteModelOpen, setIsDeleteModelOpen] =
     useAppStore(
       useShallow((state) => [
         state.fileId,
-        state.setFileId,
         state.isDeleteModelOpen,
         state.setIsDeleteModelOpen,
       ])
