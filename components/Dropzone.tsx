@@ -9,23 +9,31 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytesResumable, UploadTask } from "firebase/storage";
+import {
+  getDownloadURL,
+  ref,
+  uploadBytesResumable,
+  UploadTask,
+} from "firebase/storage";
 import { useState } from "react";
 import ReactDropzone from "react-dropzone";
 import toast from "react-hot-toast";
 
 const Dropzone = () => {
   const maxSize = 20 * 1024 * 1024;
-  const [uploads, setUploads] = useState<{ id: string; name: string; progress: number; loading: boolean; uploadTask?: UploadTask }[]>([]);
+  const [uploads, setUploads] = useState<
+    {
+      id: string;
+      name: string;
+      progress: number;
+      loading: boolean;
+      uploadTask?: UploadTask;
+    }[]
+  >([]);
   const { user } = useUser();
 
   const uploadFile = async (selectedFile: File) => {
     if (!user) return;
-
-    const uploadId = selectedFile.name + Date.now();
-    const uploadTask = uploadBytesResumable(ref(storage, `users/${user.id}/files/${uploadId}`), selectedFile);
-    
-    setUploads((prev) => [...prev, { id: uploadId, name: selectedFile.name, progress: 0, loading: true, uploadTask }]);
 
     const docRef = await addDoc(collection(db, `users/${user.id}/files`), {
       userId: user.id,
@@ -37,11 +45,33 @@ const Dropzone = () => {
       size: selectedFile.size,
     });
 
+    const uploadId = docRef.id;
+    const uploadTask = uploadBytesResumable(
+      ref(storage, `users/${user.id}/files/${uploadId}`),
+      selectedFile
+    );
+
+    setUploads((prev) => [
+      ...prev,
+      {
+        id: uploadId,
+        name: selectedFile.name,
+        progress: 0,
+        loading: true,
+        uploadTask,
+      },
+    ]);
+
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploads((prev) => prev.map((upload) => upload.id === uploadId ? { ...upload, progress } : upload));
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploads((prev) =>
+          prev.map((upload) =>
+            upload.id === uploadId ? { ...upload, progress } : upload
+          )
+        );
       },
       () => {
         toast.error("Upload failed!");
@@ -52,7 +82,11 @@ const Dropzone = () => {
         await updateDoc(doc(db, "users", user.id, "files", docRef.id), {
           downloadUrl,
         });
-        setUploads((prev) => prev.map((upload) => upload.id === uploadId ? { ...upload, loading: false } : upload));
+        setUploads((prev) =>
+          prev.map((upload) =>
+            upload.id === uploadId ? { ...upload, loading: false } : upload
+          )
+        );
         toast.success("File uploaded successfully!");
       }
     );
@@ -78,8 +112,15 @@ const Dropzone = () => {
   return (
     <section className="m-4">
       <ReactDropzone minSize={0} maxSize={maxSize} onDrop={onDrop}>
-        {({ getRootProps, getInputProps, isDragActive, isDragReject, fileRejections }) => {
-          const isFileTooLarge = fileRejections.length > 0 && fileRejections[0].file.size > maxSize;
+        {({
+          getRootProps,
+          getInputProps,
+          isDragActive,
+          isDragReject,
+          fileRejections,
+        }) => {
+          const isFileTooLarge =
+            fileRejections.length > 0 && fileRejections[0].file.size > maxSize;
           return (
             <div>
               <div
@@ -92,34 +133,51 @@ const Dropzone = () => {
                 <input {...getInputProps()} />
                 {!isDragActive && "Click here or drop a file to upload!"}
                 {isDragActive && !isDragReject && "Drop it like it's hot!"}
-                {isDragReject && !isFileTooLarge && "File type not accepted, sorry!"}
-                {isFileTooLarge && <div className="text-danger mt-2">File is too large.</div>}
+                {isDragReject &&
+                  !isFileTooLarge &&
+                  "File type not accepted, sorry!"}
+                {isFileTooLarge && (
+                  <div className="text-danger mt-2">File is too large.</div>
+                )}
               </div>
               {uploads.length != 0 && (
-              <div className="fixed bottom-4 border right-4 w-64 p-3 rounded-lg shadow-lg space-y-2">
-                {uploads.map(({ id, name, progress, loading }) => (
-                  <div key={id} className="p-2 rounded-lg border-b">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-medium truncate w-40" title={name}>{name}</span>
-                      {loading ? <span className="text-sm text-gray-500">Uploading...</span> : <span className="text-sm text-green-500">Completed</span>}
+                <div className="fixed bottom-4 border right-4 w-64 p-3 rounded-lg shadow-lg space-y-2">
+                  {uploads.map(({ id, name, progress, loading }) => (
+                    <div key={id} className="p-2 rounded-lg border-b">
+                      <div className="flex justify-between items-center mb-1">
+                        <span
+                          className="font-medium truncate w-40"
+                          title={name}
+                        >
+                          {name}
+                        </span>
+                        {loading ? (
+                          <span className="text-sm text-gray-500">
+                            Uploading...
+                          </span>
+                        ) : (
+                          <span className="text-sm text-green-500">
+                            Completed
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-full rounded-full h-2.5 bg-gray-300 dark:bg-gray-500">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full transition-all"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                      {loading && (
+                        <button
+                          onClick={() => cancelUpload(id)}
+                          className="mt-2 text-xs text-red-500 hover:text-red-700"
+                        >
+                          Cancel Upload
+                        </button>
+                      )}
                     </div>
-                    <div className="w-full rounded-full h-2.5 bg-gray-300 dark:bg-gray-500">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full transition-all"
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                    {loading && (
-                      <button 
-                        onClick={() => cancelUpload(id)} 
-                        className="mt-2 text-xs text-red-500 hover:text-red-700"
-                      >
-                        Cancel Upload
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
             </div>
           );
