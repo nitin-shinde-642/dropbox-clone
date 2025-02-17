@@ -5,6 +5,8 @@ import { ColumnDef } from "@tanstack/react-table";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import prettyBytes from "pretty-bytes";
 import { COLOR_EXTENSION_MAP } from "@/constant";
+import { getDownloadURL, ref } from "firebase/storage";
+import { storage } from "@/firebase";
 
 export const columns: ColumnDef<FileType>[] = [
   {
@@ -55,15 +57,33 @@ export const columns: ColumnDef<FileType>[] = [
     accessorKey: "downloadUrl",
     header: "Link",
     cell: ({ row }) => {
+      const handleDownload = async () => {
+        try {
+          const rowId = row.getValue("id") as string; // Assuming row ID is the filename
+          const customFileName = row.getValue("fileName") as string;
+
+          const fileRef = ref(storage, rowId);
+          const fileUrl = await getDownloadURL(fileRef);
+
+          // Create an anchor element to trigger download
+          const link = document.createElement("a");
+          link.href = fileUrl;
+          link.download = customFileName; // Set custom file name
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (error) {
+          console.error("Error downloading file:", error);
+        }
+      };
+
       return (
-        <a
-          href={row.getValue("downloadUrl") as string}
-          // download={row.getValue("fileName") as string}
-          target="_blank"
-          className="underline text-blue-500 hover:text-blue-600"
+        <button
+          onClick={handleDownload}
+          className="text-blue-500 underline hover:text-blue-600"
         >
           Download
-        </a>
+        </button>
       );
     },
   },
